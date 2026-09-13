@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Équation Duel — Multijoueur</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="menu-body">
+<div class="menu">
+  <h1>⚔️ ÉQUATION DUEL</h1>
+  <p class="subtitle">Duel mathématique 1v1 en ligne</p>
+
+  <div class="menu-card">
+    <h2>Créer une partie</h2>
+    <p>Un code sera généré à partager à ton adversaire.</p>
+    <button id="create-btn" class="btn">CRÉER</button>
+  </div>
+
+  <div class="menu-card">
+    <h2>Rejoindre une partie</h2>
+    <p>Entre le code que ton ami t'a envoyé.</p>
+    <input id="join-input" class="code-input" placeholder="CODE" maxlength="6" autocomplete="off">
+    <button id="join-btn" class="btn btn-secondary">REJOINDRE</button>
+  </div>
+
+  <div id="status" class="status"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  const status = document.getElementById('status');
+  const createBtn = document.getElementById('create-btn');
+  const joinBtn = document.getElementById('join-btn');
+  const joinInput = document.getElementById('join-input');
+
+  function showStatus(msg, type = 'info') {
+    status.textContent = msg;
+    status.className = 'status ' + type;
+  }
+
+  // ============ CRÉER ============
+  createBtn.addEventListener('click', () => {
+    createBtn.disabled = true;
+    socket.emit('create-room', (res) => {
+      if (!res.ok) {
+        showStatus('Erreur de création.', 'err');
+        createBtn.disabled = false;
+        return;
+      }
+      sessionStorage.setItem('role', res.role);
+      sessionStorage.setItem('code', res.code);
+
+      showStatus('Code de la partie :', 'ok');
+      const codeDiv = document.createElement('div');
+      codeDiv.className = 'big-code';
+      codeDiv.textContent = res.code;
+      status.parentNode.insertBefore(codeDiv, status.nextSibling);
+      showStatus('En attente de l\'adversaire…', 'info');
+    });
+  });
+
+  // Quand l'adversaire rejoint, l'hôte va sur game.html
+  socket.on('opponent-joined', () => {
+    showStatus('Adversaire connecté ! Démarrage…', 'ok');
+    setTimeout(() => location.href = 'game.html', 500);
+  });
+
+  // ============ REJOINDRE ============
+  joinBtn.addEventListener('click', () => {
+    const code = joinInput.value.trim().toUpperCase();
+    if (code.length !== 6) { showStatus('Le code doit faire 6 caractères.', 'err'); return; }
+    joinBtn.disabled = true;
+    showStatus('Connexion à la partie ' + code + '…', 'info');
+
+    socket.emit('join-room', code, (res) => {
+      if (!res.ok) {
+        showStatus(res.error || 'Erreur', 'err');
+        joinBtn.disabled = false;
+        return;
+      }
+      sessionStorage.setItem('role', res.role);
+      sessionStorage.setItem('code', res.code);
+      showStatus('Connecté ! Démarrage…', 'ok');
+      setTimeout(() => location.href = 'game.html', 500);
+    });
+  });
+
+  joinInput.addEventListener('input', () => {
+    joinInput.value = joinInput.value.toUpperCase();
+  });
+</script>
+</body>
+</html>

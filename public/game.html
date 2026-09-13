@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Équation Duel — Partie</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="game-body">
+<div id="app">
+  <div id="header">
+    <div id="title">⚔️ ÉQUATION DUEL ⚔️</div>
+    <div id="round-info">Manche <span id="round-num">1</span> / <span id="round-total">5</span></div>
+    <div id="timer-bar"></div>
+  </div>
+
+  <div id="arena">
+    <div class="player-zone me" id="my-zone">
+      <div class="score-row">
+        <span class="player-name" id="my-name">MOI</span>
+        <span class="score" id="my-score">0</span>
+      </div>
+      <div class="equation-box">
+        <div class="equation" id="my-equation">En attente…</div>
+      </div>
+      <div class="progress-dots" id="my-dots"></div>
+      <div class="input-row">
+        <input type="text" class="answer-input" id="my-input" inputmode="numeric" placeholder="?" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="answer-hint" id="my-hint"></div>
+      <div class="powerup-bar" id="my-powerups">
+        <div class="powerup" data-pu="hint"><span class="icon">💡</span><span class="label">INDICE</span><span class="count">2</span></div>
+        <div class="powerup" data-pu="freeze"><span class="icon">❄️</span><span class="label">GEL</span><span class="count">1</span></div>
+        <div class="powerup" data-pu="skip"><span class="icon">⏭️</span><span class="label">PASSER</span><span class="count">1</span></div>
+      </div>
+      <div class="feedback" id="my-feedback"></div>
+    </div>
+
+    <div class="player-zone opp" id="opp-zone">
+      <div class="score-row">
+        <span class="player-name" id="opp-name">ADVERSAIRE</span>
+        <span class="score" id="opp-score">0</span>
+      </div>
+      <div class="equation-box">
+        <div class="equation" id="opp-equation">—</div>
+      </div>
+      <div class="progress-dots" id="opp-dots"></div>
+      <div class="opp-status" id="opp-status">En attente…</div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="countdown-overlay"><div id="countdown">3</div></div>
+  <div class="overlay hidden" id="round-overlay">
+    <h1 id="round-result">ROUND GAGNÉ !</h1>
+    <p id="round-detail"></p>
+    <button class="btn" id="next-round-btn">CONTINUER</button>
+  </div>
+  <div class="overlay hidden" id="gameover-overlay">
+    <h1>🏆 FIN DE PARTIE 🏆</h1>
+    <div class="winner-name" id="winner-name"></div>
+    <p id="final-score"></p>
+    <button class="btn" id="restart-btn" style="margin-top:30px;">REJOUER</button>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="equations.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
