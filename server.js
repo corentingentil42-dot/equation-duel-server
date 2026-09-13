@@ -57,6 +57,19 @@ io.on('connection', (socket) => {
 
     console.log('👥 Client rejoint :', code);
 
+      // ===== LE CLIENT SIGNALE QU'IL EST PRÊT =====
+  socket.on('client-ready', () => {
+    if (!socket.roomCode) return;
+    socket.to(socket.roomCode).emit('client-ready');
+    console.log('✅ Client prêt dans la salle', socket.roomCode);
+  });
+
+    // Informe l'hôte que l'adversaire est là
+    io.to(room.host).emit('opponent-joined');
+
+    callback({ ok: true, code, role: 'guest' });
+  });
+
     // Informe l'hôte que l'adversaire est là
     io.to(room.host).emit('opponent-joined');
 
