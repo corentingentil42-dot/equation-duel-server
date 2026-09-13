@@ -57,29 +57,21 @@ io.on('connection', (socket) => {
 
     console.log('👥 Client rejoint :', code);
 
-      // ===== LE CLIENT SIGNALE QU'IL EST PRÊT =====
+    io.to(room.host).emit('opponent-joined');
+
+    callback({ ok: true, code, role: 'guest' });
+  });
+
+  // ===== LE CLIENT SIGNALE QU'IL EST PRÊT =====
   socket.on('client-ready', () => {
     if (!socket.roomCode) return;
     socket.to(socket.roomCode).emit('client-ready');
     console.log('✅ Client prêt dans la salle', socket.roomCode);
   });
 
-    // Informe l'hôte que l'adversaire est là
-    io.to(room.host).emit('opponent-joined');
-
-    callback({ ok: true, code, role: 'guest' });
-  });
-
-    // Informe l'hôte que l'adversaire est là
-    io.to(room.host).emit('opponent-joined');
-
-    callback({ ok: true, code, role: 'guest' });
-  });
-
   // ===== RELAI DES MESSAGES DE JEU =====
   socket.on('game-message', (msg) => {
     if (!socket.roomCode) return;
-    // Envoie à tout le monde dans la salle SAUF l'émetteur
     socket.to(socket.roomCode).emit('game-message', msg);
   });
 
@@ -88,12 +80,11 @@ io.on('connection', (socket) => {
     console.log('❌ Déconnecté :', socket.id);
     const code = socket.roomCode;
     if (code && rooms[code]) {
-      // Préviens l'autre joueur
       socket.to(code).emit('opponent-left');
       delete rooms[code];
     }
   });
-);
+});
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
