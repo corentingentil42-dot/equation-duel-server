@@ -35,7 +35,8 @@ const state = {
   oppEquation: '—',
   oppSolved: false,
   oppProgress: [0, 0],
-  mode: 'easy'
+  mode: 'easy',
+  gameStarted: false
 };
 
 const $ = (id) => document.getElementById(id);
@@ -82,6 +83,20 @@ socket.on('game-message', (msg) => {
       resetGame();
       if (ROLE === 'host') startCountdown();
       break;
+    case 'client-ready-next':
+      if (ROLE === 'host') {
+        state.round++;
+        sendRound();
+      }
+      break;
+  }
+});
+
+// Le client signale qu'il est prêt au lancement
+socket.on('client-ready', () => {
+  if (ROLE === 'host') {
+    console.log('[Game] Client prêt, démarrage !');
+    setTimeout(() => startCountdown(), 500);
   }
 });
 
@@ -95,23 +110,34 @@ socket.on('opponent-left', () => {
 // ==========================================
 window.addEventListener('load', () => {
   if (ROLE === 'host') {
-    setTimeout(() => startCountdown(), 800);
+    console.log('[Game] Hôte en attente du client...');
+    // L'hôte attend le signal 'client-ready' du client
+  } else {
+    console.log('[Game] Client prêt, signal envoyé');
+    // Le client prévient l'hôte qu'il est prêt
+    setTimeout(() => socket.emit('client-ready'), 300);
   }
 });
 
+// ==========================================
+//   ENVOI D'UN ROUND (MÊME ÉQUATION POUR LES DEUX)
+// ==========================================
 function sendRound() {
-  const eqHost = Equations.generateEquation(state.mode);
-  const eqClient = Equations.generateEquation(state.mode);
+  // 🎯 UNE SEULE équation générée, partagée par les deux joueurs
+  const eq = Equations.generateEquation(state.mode);
   const msg = {
     type: 'start-round',
     round: state.round,
     mode: state.mode,
-    equations: [eqHost, eqClient]
+    equations: [eq, eq]   // même équation pour les deux
   };
   applyRound(msg);
   socket.emit('game-message', msg);
 }
 
+// ==========================================
+//   APPLICATION D'UN ROUND
+// ==========================================
 function applyRound(msg) {
   state.round = msg.round;
   state.mode = msg.mode;
@@ -121,6 +147,7 @@ function applyRound(msg) {
   state.oppProgress = [0, 0];
   state.myCurrentIndex = 0;
   state.myCombo = 0;
+  state.gameStarted = true;
   myZone.classList.remove('frozen');
 
   const myEq = msg.equations[state.myIndex];
@@ -145,7 +172,9 @@ function applyRound(msg) {
   state.running = true;
   state.timeLeft = CONFIG.roundTime;
   startTimer();
-  inputEl.focus();
+
+  // Force le focus (utile sur mobile après réception du message)
+  setTimeout(() => inputEl.focus(), 100);
 }
 
 function updateScore() {
@@ -406,6 +435,7 @@ function resetGame() {
   state.myPowerups = { hint: 2, freeze: 1, skip: 1 };
   state.mySolved = false;
   state.oppSolved = false;
+  state.gameStarted = false;
   updateScore();
   updatePowerups();
   $('gameover-overlay').classList.add('hidden');
@@ -419,6 +449,9 @@ $('next-round-btn').addEventListener('click', () => {
   if (ROLE === 'host') {
     state.round++;
     sendRound();
+  } else {
+    // Le client signale qu'il est prêt pour la suite
+    socket.emit('game-message', { type: 'client-ready-next' });
   }
 });
 
@@ -438,7 +471,6 @@ powerupBar.querySelectorAll('.powerup').forEach(el => {
   el.addEventListener('click', () => usePowerup(el.dataset.pu));
 });
 
-window.addEventListener('load', () => setTimeout(() => inputEl.focus(), 800));
 document.body.addEventListener('touchmove', (e) => {
   if (e.target === document.body) e.preventDefault();
 }, { passive: false });
